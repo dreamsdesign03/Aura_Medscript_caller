@@ -1,0 +1,17 @@
+{
+  "name": "call-integration",
+  "version": "1.0.0",
+  "description": "Twilio click-to-call integration demo",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@twilio/voice-sdk": "^2.18.5",
+    "twilio": "^6.1.1"
+  }
+}

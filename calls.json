@@ -1,0 +1,118 @@
+[
+  {
+    "type": "ai",
+    "sid": "conv_7601m39s8hpbfc7vjg6vsdtz2d1n",
+    "conversation_id": "conv_7601m39s8hpbfc7vjg6vsdtz2d1n",
+    "callSid": "CA2545f44af1225f4f5eb89f3803d591a1",
+    "to": "+916352504304",
+    "status": "initiated",
+    "startedAt": 1790256236778,
+    "duration": "0",
+    "transcript": []
+  },
+  {
+    "type": "twilio",
+    "sid": "CA220b2b4bc90253a86be693f48ca80a75",
+    "to": "+916352504304",
+    "status": "completed",
+    "startedAt": 1790256179162,
+    "duration": "28",
+    "recording": "REbe7f83cab129770b5d9e5a0f949a3ea4"
+  },
+  {
+    "type": "ai",
+    "sid": "conv_8601m39qp89te58trh6zxvqm92mq",
+    "conversation_id": "conv_8601m39qp89te58trh6zxvqm92mq",
+    "callSid": "CAcdf7f141a7649ca645a573818e7c62ac",
+    "to": "+916352504304",
+    "status": "completed",
+    "startedAt": 1790254588787,
+    "duration": "5",
+    "transcript": [
+      {
+        "role": "agent",
+        "agent_metadata": {
+          "agent_id": "agent_4501kan1z5nveght9z1bc11yyaej",
+          "branch_id": "agtbrch_6901ks16feqse6kv4v578j5sh9rb",
+          "workflow_node_id": null,
+          "version_id": "agtvrsn_9001kxjxwgc2frxapnxseq6pn06v"
+        },
+        "message": "“Hello 😊 I’m Esha from Aura Clinic!  \nHow are you?",
+        "multivoice_message": null,
+        "tool_calls": [],
+        "tool_results": [],
+        "feedback": null,
+        "llm_override": null,
+        "producing_llm": "gpt-4o-mini",
+        "time_in_call_secs": 0,
+        "conversation_turn_metrics": {
+          "metrics": {
+            "convai_tts_service_ttfb": {
+              "elapsed_time": 0.16317436192184687
+            },
+            "convai_ttf_audio_since_silence": {
+              "elapsed_time": 0.168156259926036
+            },
+            "convai_turn_silence_before_initiation": {
+              "elapsed_time": 0
+            }
+          },
+          "convai_asr_provider": null,
+          "convai_tts_model": "eleven_turbo_v2",
+          "convai_tts_cascade": null
+        },
+        "rag_retrieval_info": null,
+        "llm_usage": null,
+        "interrupted": false,
+        "ignored_as_backchannel": false,
+        "original_message": null,
+        "reasoning": [],
+        "source_medium": null,
+        "source_event_id": 1,
+        "used_static_kb_document_ids": [],
+        "analysis": null,
+        "user_identifier": null,
+        "id": null,
+        "compaction": null,
+        "triggered_guardrails": [],
+        "file_input": null,
+        "file_inputs": [],
+        "contextual_update_info": null,
+        "config_snapshot_id": null,
+        "reasoned": false
+      }
+    ],
+    "transcriptSummary": "The agent, Esha from Aura Clinic, initiated the conversation with a friendly greeting and inquired about the user's well-being.",
+    "recording": "conv_8601m39qp89te58trh6zxvqm92mq"
+  },
+  {
+    "type": "ai",
+    "to": "+918866351852",
+    "status": "in-progress",
+    "startedAt": 1790254430907
+  },
+  {
+    "sid": "CA93845606f1988525fa54427ccff42144",
+    "to": "+916352504304",
+    "status": "completed",
+    "startedAt": 1790252786881,
+    "duration": "21",
+    "recording": "REf4efd093f2737b2f61f5c911a193dde0"
+  },
+  {
+    "sid": "CAe9f380da004f5ddff221aac8e70e01c8",
+    "to": "+918866351852",
+    "status": "completed",
+    "startedAt": 1790252691228,
+    "duration": "7",
+    "noRec": true
+  },
+  {
+    "sid": "CA8116e4b9dd76ee6972ac9988c8ff729e",
+    "to": "+918866351852",
+    "status": "completed",
+    "startedAt": 1790252671238,
+    "duration": "7",
+    "noRec": true
+  }
+]

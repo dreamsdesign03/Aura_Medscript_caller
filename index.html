@@ -1,0 +1,1295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aura Medscribe | Call Integration & Control Center</title>
+<meta name="description" content="Professional Twilio Voice & ElevenLabs Conversational AI Calling dashboard with real-time call tracking and recording management.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<!-- Local Twilio Voice JavaScript SDK -->
+<script src="/twilio.min.js"></script>
+<style>
+  :root {
+    --bg-dark: #090d14;
+    --bg-card: #131a26;
+    --bg-card-hover: #1a2434;
+    --bg-input: #0e141f;
+    --border: rgba(255, 255, 255, 0.08);
+    --border-highlight: rgba(59, 130, 246, 0.3);
+    
+    --accent-blue: #3b82f6;
+    --accent-blue-glow: rgba(59, 130, 246, 0.25);
+    --accent-emerald: #10b981;
+    --accent-emerald-glow: rgba(16, 185, 129, 0.3);
+    --accent-purple: #8b5cf6;
+    --accent-rose: #f43f5e;
+    --accent-amber: #f59e0b;
+    
+    --text-primary: #f8fafc;
+    --text-secondary: #94a3b8;
+    --text-muted: #64748b;
+    
+    --radius-lg: 20px;
+    --radius-md: 14px;
+    --radius-sm: 8px;
+    
+    --shadow-main: 0 20px 40px -15px rgba(0, 0, 0, 0.6);
+    --shadow-button: 0 8px 20px -4px rgba(16, 185, 129, 0.35);
+  }
+
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  body {
+    background-color: var(--bg-dark);
+    color: var(--text-primary);
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background-image: 
+      radial-gradient(circle at 15% 15%, rgba(59, 130, 246, 0.08) 0%, transparent 40%),
+      radial-gradient(circle at 85% 85%, rgba(16, 185, 129, 0.06) 0%, transparent 40%);
+  }
+
+  /* Header Bar */
+  header {
+    background: rgba(19, 26, 38, 0.85);
+    backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 24px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .header-container {
+    max-width: 1120px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .brand-icon {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, var(--accent-blue), #2563eb);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
+  }
+
+  .brand-text h1 {
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+    background: linear-gradient(180deg, #ffffff 0%, #cbd5e1 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .brand-text p {
+    font-size: 12px;
+    color: var(--text-secondary);
+  }
+
+  .connection-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    padding: 6px 14px;
+    border-radius: 99px;
+    font-size: 12px;
+    color: var(--text-secondary);
+  }
+
+  .status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: var(--accent-emerald);
+    box-shadow: 0 0 8px var(--accent-emerald);
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0% { transform: scale(0.95); opacity: 0.8; }
+    50% { transform: scale(1.15); opacity: 1; }
+    100% { transform: scale(0.95); opacity: 0.8; }
+  }
+
+  /* Main Layout */
+  main {
+    max-width: 1120px;
+    margin: 0 auto;
+    padding: 32px 20px;
+    width: 100%;
+    display: grid;
+    grid-template-columns: 380px 1fr;
+    gap: 28px;
+    flex: 1;
+  }
+
+  @media (max-width: 860px) {
+    main {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* Card Components */
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    box-shadow: var(--shadow-main);
+    transition: border-color 0.2s ease;
+  }
+
+  .card:hover {
+    border-color: rgba(255, 255, 255, 0.12);
+  }
+
+  .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+
+  .card-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .card-title svg {
+    color: var(--accent-blue);
+  }
+
+  /* Phone Display Screen with Inline Clear Button */
+  .display-screen {
+    background: linear-gradient(180deg, #090e17 0%, #0e1522 100%);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 16px 14px;
+    margin-bottom: 20px;
+    text-align: center;
+    position: relative;
+  }
+
+  .input-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  #num {
+    background: transparent;
+    border: none;
+    width: 100%;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 24px;
+    font-weight: 600;
+    color: #ffffff;
+    text-align: center;
+    letter-spacing: 1px;
+    outline: none;
+    caret-color: var(--accent-blue);
+  }
+
+  #num::placeholder {
+    color: var(--text-muted);
+    font-weight: 400;
+    font-size: 20px;
+  }
+
+  .inline-del-btn {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: all 0.15s ease;
+  }
+
+  .inline-del-btn:hover {
+    background: rgba(244, 63, 94, 0.15);
+    color: var(--accent-rose);
+    border-color: rgba(244, 63, 94, 0.3);
+  }
+
+  .caller-info {
+    font-size: 11px;
+    color: var(--accent-blue);
+    margin-top: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+
+  /* Keypad Grid */
+  .keypad {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .key-btn {
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 14px 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+    outline: none;
+  }
+
+  .key-btn:hover {
+    background: var(--bg-card-hover);
+    border-color: rgba(255, 255, 255, 0.15);
+    transform: translateY(-1px);
+  }
+
+  .key-btn:active {
+    transform: translateY(1px);
+    background: rgba(59, 130, 246, 0.15);
+    border-color: var(--accent-blue);
+  }
+
+  .key-num {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1.1;
+  }
+
+  .key-sub {
+    font-size: 9px;
+    font-weight: 600;
+    color: var(--text-muted);
+    letter-spacing: 1.5px;
+    margin-top: 2px;
+    height: 11px;
+  }
+
+  /* Call Control Action Bar (Symmetrical 2-Column Layout) */
+  .action-container {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .primary-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .ai-btn {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    border: none;
+    border-radius: var(--radius-md);
+    padding: 14px 16px;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 700;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    cursor: pointer;
+    box-shadow: 0 8px 20px -4px rgba(59, 130, 246, 0.4);
+    transition: all 0.2s ease;
+  }
+
+  .ai-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 12px 24px -4px rgba(59, 130, 246, 0.5);
+  }
+
+  .ai-btn:active {
+    transform: translateY(1px);
+  }
+
+  .ai-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+
+  .call-btn {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    border: none;
+    border-radius: var(--radius-md);
+    padding: 14px 16px;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 700;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    cursor: pointer;
+    box-shadow: var(--shadow-button);
+    transition: all 0.2s ease;
+  }
+
+  .call-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 12px 24px -4px rgba(16, 185, 129, 0.5);
+  }
+
+  .call-btn:active {
+    transform: translateY(1px);
+  }
+
+  .call-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+
+  .call-btn.calling {
+    background: linear-gradient(135deg, #f43f5e 0%, #e11d48 100%);
+    box-shadow: 0 8px 20px -4px rgba(244, 63, 94, 0.4);
+  }
+
+  .secondary-actions {
+    display: flex;
+    gap: 10px;
+  }
+
+  .mute-btn {
+    width: 100%;
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 10px;
+    color: var(--text-secondary);
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .mute-btn:hover {
+    background: var(--bg-card-hover);
+    color: var(--text-primary);
+  }
+
+  .mute-btn.active {
+    background: rgba(244, 63, 94, 0.15);
+    color: var(--accent-rose);
+    border-color: rgba(244, 63, 94, 0.3);
+  }
+
+  /* Message Status */
+  .status-banner {
+    margin-top: 16px;
+    min-height: 24px;
+    font-size: 13px;
+    color: var(--text-secondary);
+    text-align: center;
+    border-radius: var(--radius-sm);
+    padding: 10px 14px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px dashed rgba(255, 255, 255, 0.06);
+    transition: all 0.2s ease;
+  }
+
+  .status-banner:empty {
+    display: none;
+  }
+
+  .status-banner.error {
+    background: rgba(244, 63, 94, 0.1);
+    border-color: rgba(244, 63, 94, 0.3);
+    color: #fda4af;
+  }
+
+  .status-banner.success {
+    background: rgba(16, 185, 129, 0.1);
+    border-color: rgba(16, 185, 129, 0.3);
+    color: #6ee7b7;
+  }
+
+  .status-banner.info {
+    background: rgba(59, 130, 246, 0.1);
+    border-color: rgba(59, 130, 246, 0.3);
+    color: #93c5fd;
+  }
+
+  /* Calls List Panel */
+  .calls-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .refresh-btn {
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    border-radius: var(--radius-sm);
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+  }
+
+  .refresh-btn:hover {
+    color: var(--text-primary);
+    border-color: rgba(255, 255, 255, 0.15);
+  }
+
+  .refresh-btn svg.spinning {
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
+  .calls-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .call-item {
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    transition: all 0.2s ease;
+  }
+
+  .call-item:hover {
+    border-color: rgba(255, 255, 255, 0.15);
+    background: var(--bg-card-hover);
+  }
+
+  .call-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+  }
+
+  .call-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .call-type-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    background: rgba(59, 130, 246, 0.12);
+    color: var(--accent-blue);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .call-type-icon.ai {
+    background: rgba(139, 92, 246, 0.15);
+    color: var(--accent-purple);
+  }
+
+  .call-dest {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .call-meta {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 2px;
+  }
+
+  /* Status & AI Chips */
+  .badge-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .badge {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 4px 10px;
+    border-radius: 99px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .badge.ai {
+    background: rgba(139, 92, 246, 0.2);
+    color: #c084fc;
+    border: 1px solid rgba(139, 92, 246, 0.4);
+  }
+
+  .badge.completed {
+    background: rgba(16, 185, 129, 0.15);
+    color: #34d399;
+    border: 1px solid rgba(16, 185, 129, 0.3);
+  }
+
+  .badge.queued, .badge.ringing, .badge.in-progress {
+    background: rgba(59, 130, 246, 0.15);
+    color: #60a5fa;
+    border: 1px solid rgba(59, 130, 246, 0.3);
+  }
+
+  .badge.failed, .badge.busy, .badge.no-answer, .badge.canceled {
+    background: rgba(244, 63, 94, 0.15);
+    color: #f87171;
+    border: 1px solid rgba(244, 63, 94, 0.3);
+  }
+
+  /* Audio player styling */
+  .rec-container {
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: var(--radius-sm);
+    padding: 8px 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .rec-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+  }
+
+  audio {
+    width: 100%;
+    height: 32px;
+    border-radius: 4px;
+    outline: none;
+  }
+
+  audio::-webkit-media-controls-panel {
+    background-color: #1a2332;
+  }
+
+  /* Transcript Details Accordion */
+  .transcript-details {
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: var(--radius-sm);
+    padding: 10px 14px;
+    font-size: 12px;
+  }
+
+  .transcript-details summary {
+    cursor: pointer;
+    font-weight: 600;
+    color: var(--accent-blue);
+    outline: none;
+    user-select: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: color 0.15s ease;
+  }
+
+  .transcript-details summary:hover {
+    color: #60a5fa;
+  }
+
+  .transcript-content {
+    margin-top: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .summary-box {
+    background: rgba(59, 130, 246, 0.08);
+    border-left: 3px solid var(--accent-blue);
+    padding: 8px 12px;
+    border-radius: 4px;
+    color: #cbd5e1;
+    font-style: italic;
+    line-height: 1.4;
+  }
+
+  .transcript-dialogue {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .t-line {
+    line-height: 1.45;
+    background: rgba(255, 255, 255, 0.02);
+    padding: 6px 10px;
+    border-radius: 6px;
+  }
+
+  .t-role {
+    font-weight: 700;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-right: 6px;
+  }
+
+  .t-role.agent {
+    color: var(--accent-purple);
+  }
+
+  .t-role.user {
+    color: var(--accent-emerald);
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 48px 20px;
+    color: var(--text-muted);
+  }
+
+  .empty-icon {
+    width: 54px;
+    height: 54px;
+    border-radius: 50%;
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 16px;
+    color: var(--text-muted);
+  }
+
+  .empty-state h3 {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 4px;
+  }
+
+  .empty-state p {
+    font-size: 13px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-container">
+    <div class="brand">
+      <div class="brand-icon">
+        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+          <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+        </svg>
+      </div>
+      <div class="brand-text">
+        <h1>Aura Medscribe</h1>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main>
+  <!-- Left Side: Phone Dialer -->
+  <section class="card">
+    <div class="card-header">
+      <h2 class="card-title">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+        </svg>
+        New Outbound Call
+      </h2>
+    </div>
+
+    <!-- Phone Display Screen -->
+    <div class="display-screen">
+      <label style="font-size: 10px; margin-bottom: 4px; display: block; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Destination Phone Number</label>
+      <div class="input-row">
+        <input id="num" placeholder="Enter number..." inputmode="tel" aria-label="Number to call" autocomplete="off">
+        <button id="del" class="inline-del-btn" title="Backspace / Clear" aria-label="Delete">
+          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path d="M21 4H8l-7 8 7 8h13a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z"></path>
+            <line x1="18" y1="9" x2="12" y2="15"></line>
+            <line x1="12" y1="9" x2="18" y2="15"></line>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Dial Keypad -->
+    <div class="keypad" id="keypad">
+      <button class="key-btn" data-k="1"><span class="key-num">1</span><span class="key-sub">&nbsp;</span></button>
+      <button class="key-btn" data-k="2"><span class="key-num">2</span><span class="key-sub">ABC</span></button>
+      <button class="key-btn" data-k="3"><span class="key-num">3</span><span class="key-sub">DEF</span></button>
+      <button class="key-btn" data-k="4"><span class="key-num">4</span><span class="key-sub">GHI</span></button>
+      <button class="key-btn" data-k="5"><span class="key-num">5</span><span class="key-sub">JKL</span></button>
+      <button class="key-btn" data-k="6"><span class="key-num">6</span><span class="key-sub">MNO</span></button>
+      <button class="key-btn" data-k="7"><span class="key-num">7</span><span class="key-sub">PQRS</span></button>
+      <button class="key-btn" data-k="8"><span class="key-num">8</span><span class="key-sub">TUV</span></button>
+      <button class="key-btn" data-k="9"><span class="key-num">9</span><span class="key-sub">WXYZ</span></button>
+      <button class="key-btn" data-k="*"><span class="key-num">*</span><span class="key-sub">&nbsp;</span></button>
+      <button class="key-btn" data-k="0"><span class="key-num">0</span><span class="key-sub">+</span></button>
+      <button class="key-btn" data-k="#"><span class="key-num">#</span><span class="key-sub">&nbsp;</span></button>
+    </div>
+
+    <!-- Action Bar (Symmetrical Layout) -->
+    <div class="action-container">
+      <div class="primary-actions">
+        <button id="ai-call" class="ai-btn">
+          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+            <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 14a4 4 0 1 1 4-4 4 4 0 0 1-4 4z"></path>
+            <circle cx="12" cy="12" r="2"></circle>
+          </svg>
+          <span>AI Call</span>
+        </button>
+
+        <button id="call" class="call-btn">
+          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+          </svg>
+          <span>Call Now</span>
+        </button>
+      </div>
+
+      <div id="secondary-actions" class="secondary-actions" style="display: none;">
+        <button id="mute" class="mute-btn">
+          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+            <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+            <line x1="12" y1="19" x2="12" y2="23"></line>
+            <line x1="8" y1="23" x2="16" y2="23"></line>
+          </svg>
+          <span>Mute Microphone</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Live Status Banner -->
+    <div id="msg" class="status-banner"></div>
+  </section>
+
+  <!-- Right Side: Call Activity History & Recordings -->
+  <section class="card">
+    <div class="card-header calls-header">
+      <h2 class="card-title">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="10"></circle>
+          <polyline points="12 6 12 12 16 14"></polyline>
+        </svg>
+        Call Activity Log
+      </h2>
+      <button id="btn-refresh" class="refresh-btn" onclick="manualRefresh()">
+        <svg id="refresh-icon" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path d="M23 4v6h-6M1 20v-6h6"></path>
+          <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+        </svg>
+        Sync
+      </button>
+    </div>
+
+    <div id="list" class="calls-list">
+      <div class="empty-state">
+        <div class="empty-icon">
+          <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+          </svg>
+        </div>
+        <h3>No Calls Recorded Yet</h3>
+        <p>Enter a target phone number and click "Call Now" or "AI Call".</p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+
+let device = null;
+let activeCall = null;
+let callTimerInterval = null;
+let callStartTime = 0;
+
+// Format number (10-digit Indian -> +91..., otherwise keep E.164)
+function formatNumber(n) {
+  n = String(n || '').replace(/[^\d+]/g, '');
+  if (/^\d{10}$/.test(n)) return '+91' + n;
+  if (/^91\d{10}$/.test(n)) return '+' + n;
+  return n.startsWith('+') ? n : '+' + n;
+}
+
+// Load Twilio Config
+fetch('/api/config')
+  .then((r) => r.json())
+  .then((c) => {
+    if (c.from && $('twilio-num-display')) {
+      $('twilio-num-display').textContent = 'Twilio: ' + c.from;
+    }
+  })
+  .catch((err) => console.error('Failed to load config:', err));
+
+// Initialize Twilio Device
+async function initDevice() {
+  if (typeof window.Twilio === 'undefined' || typeof window.Twilio.Device === 'undefined') {
+    showStatus('Twilio SDK failed to load', 'error');
+    return;
+  }
+
+  showStatus('Initializing Twilio Voice Device...', 'info');
+  try {
+    const res = await fetch('/api/token');
+    const data = await res.json();
+    if (!res.ok || !data.token) {
+      throw new Error(data.error || 'Failed to fetch Twilio access token.');
+    }
+
+    device = new window.Twilio.Device(data.token, {
+      codecPreferences: ['opus', 'pcmu'],
+      debug: false
+    });
+
+    device.on('registered', () => {
+      showStatus('Twilio & AI Phone Ready', 'success');
+      setTimeout(() => {
+        if (!activeCall) showStatus('', '');
+      }, 3000);
+    });
+
+    device.on('error', (err) => {
+      console.error('Twilio Device Error:', err);
+      showStatus(err.message || 'Twilio Device Error', 'error');
+    });
+
+    device.on('tokenWillExpire', async () => {
+      try {
+        const r = await fetch('/api/token');
+        const d = await r.json();
+        if (d.token) device.updateToken(d.token);
+      } catch (e) {
+        console.error('Token refresh failed:', e);
+      }
+    });
+
+    await device.register();
+  } catch (err) {
+    showStatus(err.message, 'error');
+  }
+}
+
+// Keypad button handling (adds digits and sends DTMF if in call)
+$('keypad').addEventListener('click', (e) => {
+  const btn = e.target.closest('.key-btn');
+  if (btn && btn.dataset.k) {
+    const k = btn.dataset.k;
+    $('num').value += k;
+    $('num').focus();
+    if (activeCall) {
+      try { activeCall.sendDigits(k); } catch (err) { console.error('DTMF error:', err); }
+    }
+  }
+});
+
+// Inline Delete / Backspace button behavior
+$('del').onclick = () => {
+  $('num').value = $('num').value.slice(0, -1);
+  $('num').focus();
+};
+
+let delTimer;
+$('del').addEventListener('mousedown', () => {
+  delTimer = setTimeout(() => { $('num').value = ''; }, 500);
+});
+$('del').addEventListener('mouseup', () => clearTimeout(delTimer));
+
+// Mute button behavior
+$('mute').onclick = () => {
+  if (!activeCall) return;
+  const isMuted = activeCall.isMuted();
+  activeCall.mute(!isMuted);
+  if (!isMuted) {
+    $('mute').classList.add('active');
+    showStatus('Microphone Muted', 'info');
+  } else {
+    $('mute').classList.remove('active');
+    showStatus('Microphone Active', 'info');
+  }
+};
+
+// ElevenLabs AI Call Button Handler
+$('ai-call').onclick = async () => {
+  const rawNum = $('num').value.trim();
+  if (!rawNum) {
+    showStatus('Please enter a destination number.', 'error');
+    return;
+  }
+
+  const formattedNum = formatNumber(rawNum);
+
+  setCallButtonsDisabled(true);
+  showStatus('AI agent is calling...', 'info');
+
+  try {
+    const r = await fetch('/api/ai-call', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ to: formattedNum })
+    });
+
+    const j = await r.json();
+
+    if (!r.ok) {
+      throw new Error(j.error || 'Failed to trigger ElevenLabs AI Call.');
+    }
+
+    showStatus(`ElevenLabs AI Call initiated to ${formattedNum}!`, 'success');
+    loadCalls();
+  } catch (err) {
+    console.error('AI Call Error:', err);
+    showStatus(err.message, 'error');
+  } finally {
+    setCallButtonsDisabled(false);
+  }
+};
+
+// Twilio Browser Call / Hang Up Button logic
+$('call').onclick = async () => {
+  if (activeCall) {
+    activeCall.disconnect();
+    return;
+  }
+
+  if (typeof window.Twilio === 'undefined' || typeof window.Twilio.Device === 'undefined') {
+    showStatus('Twilio SDK failed to load', 'error');
+    return;
+  }
+
+  const rawNum = $('num').value.trim();
+  if (!rawNum) {
+    showStatus('Please enter a destination number.', 'error');
+    return;
+  }
+
+  const formattedNum = formatNumber(rawNum);
+
+  if (!device) {
+    showStatus('Twilio Device not ready. Refreshing...', 'error');
+    await initDevice();
+    return;
+  }
+
+  setCallUIState('connecting');
+  showStatus('Connecting call to ' + formattedNum + '...', 'info');
+
+  try {
+    activeCall = await device.connect({ params: { To: formattedNum } });
+
+    activeCall.on('ringing', () => {
+      setCallUIState('ringing');
+      showStatus('Ringing ' + formattedNum + '...', 'info');
+    });
+
+    activeCall.on('accept', async () => {
+      setCallUIState('connected');
+      startCallTimer();
+      const callSid = activeCall.parameters?.CallSid || activeCall.parameters?.callSid;
+      if (callSid) {
+        try {
+          await fetch('/api/calls/log', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ sid: callSid, to: formattedNum })
+          });
+          loadCalls();
+        } catch (err) {
+          console.error('Failed to log call:', err);
+        }
+      }
+    });
+
+    activeCall.on('disconnect', () => {
+      setCallUIState('idle');
+      stopCallTimer();
+      showStatus('Call ended.', 'info');
+      activeCall = null;
+      loadCalls();
+    });
+
+    activeCall.on('error', (err) => {
+      console.error('Active Call Error:', err);
+      setCallUIState('idle');
+      stopCallTimer();
+      showStatus(err.message || 'Call error occurred.', 'error');
+      activeCall = null;
+      loadCalls();
+    });
+
+  } catch (e) {
+    setCallUIState('idle');
+    showStatus(e.message || 'Failed to establish call.', 'error');
+    activeCall = null;
+  }
+};
+
+function setCallButtonsDisabled(disabled) {
+  $('ai-call').disabled = disabled;
+  $('call').disabled = disabled;
+}
+
+function startCallTimer() {
+  stopCallTimer();
+  callStartTime = Date.now();
+  callTimerInterval = setInterval(() => {
+    const elapsedSec = Math.floor((Date.now() - callStartTime) / 1000);
+    const mins = String(Math.floor(elapsedSec / 60)).padStart(2, '0');
+    const secs = String(elapsedSec % 60).padStart(2, '0');
+    showStatus(`In Call (${mins}:${secs})`, 'success');
+  }, 1000);
+}
+
+function stopCallTimer() {
+  if (callTimerInterval) {
+    clearInterval(callTimerInterval);
+    callTimerInterval = null;
+  }
+}
+
+function setCallUIState(state) {
+  const callBtn = $('call');
+  const aiBtn = $('ai-call');
+  const secondarySec = $('secondary-actions');
+
+  if (state === 'idle') {
+    callBtn.disabled = false;
+    aiBtn.disabled = false;
+    callBtn.className = 'call-btn';
+    callBtn.querySelector('span').textContent = 'Call Now';
+    secondarySec.style.display = 'none';
+    $('mute').classList.remove('active');
+  } else if (state === 'connecting' || state === 'ringing') {
+    callBtn.disabled = false;
+    aiBtn.disabled = true;
+    callBtn.className = 'call-btn calling';
+    callBtn.querySelector('span').textContent = 'Cancel';
+    secondarySec.style.display = 'none';
+  } else if (state === 'connected') {
+    callBtn.disabled = false;
+    aiBtn.disabled = true;
+    callBtn.className = 'call-btn calling';
+    callBtn.querySelector('span').textContent = 'Hang Up';
+    secondarySec.style.display = 'flex';
+  }
+}
+
+function showStatus(text, type = 'info') {
+  const msgEl = $('msg');
+  msgEl.textContent = text;
+  msgEl.className = 'status-banner ' + type;
+}
+
+// Manual refresh trigger for call logs
+async function manualRefresh() {
+  const icon = $('refresh-icon');
+  icon.classList.add('spinning');
+  await loadCalls();
+  setTimeout(() => icon.classList.remove('spinning'), 600);
+}
+
+// Render Call Activity List
+async function loadCalls() {
+  try {
+    const r = await fetch('/api/calls');
+    const calls = await r.json();
+
+    const listEl = $('list');
+    if (!Array.isArray(calls) || !calls.length) {
+      listEl.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-icon">
+            <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+            </svg>
+          </div>
+          <h3>No Calls Recorded Yet</h3>
+          <p>Enter a target phone number and click "Call Now" or "AI Call".</p>
+        </div>
+      `;
+      return;
+    }
+
+    listEl.innerHTML = calls.map((c) => {
+      const formattedDate = new Date(c.startedAt).toLocaleString([], {
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      });
+
+      const isAi = c.type === 'ai';
+      const audioSrc = isAi ? `/ai-rec/${escapeHtml(c.recording || c.conversation_id)}` : `/rec/${escapeHtml(c.recording)}`;
+
+      const transcriptItems = Array.isArray(c.transcript) ? c.transcript.map((t) => {
+        const roleStr = t.role === 'agent' ? 'AI Agent' : t.role === 'user' ? 'User' : escapeHtml(t.role || 'System');
+        const roleClass = t.role === 'agent' ? 'agent' : t.role === 'user' ? 'user' : '';
+        return `
+          <div class="t-line">
+            <span class="t-role ${roleClass}">${roleStr}:</span>
+            <span>${escapeHtml(t.message || t.text || '')}</span>
+          </div>
+        `;
+      }).join('') : '';
+
+      return `
+        <div class="call-item">
+          <div class="call-top">
+            <div class="call-info">
+              <div class="call-type-icon ${isAi ? 'ai' : ''}">
+                ${isAi ? `
+                  <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 14a4 4 0 1 1 4-4 4 4 0 0 1-4 4z"></path>
+                    <circle cx="12" cy="12" r="2"></circle>
+                  </svg>
+                ` : `
+                  <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+                  </svg>
+                `}
+              </div>
+              <div>
+                <div class="call-dest">${escapeHtml(c.to)}</div>
+                <div class="call-meta">${formattedDate}${c.duration ? ' &bull; ' + c.duration + 's' : ''}</div>
+              </div>
+            </div>
+            <div class="badge-group">
+              ${isAi ? '<span class="badge ai">AI Agent</span>' : ''}
+              <span class="badge ${escapeHtml(c.status)}">${escapeHtml(c.status)}</span>
+            </div>
+          </div>
+
+          ${c.recording ? `
+            <div class="rec-container">
+              <div class="rec-label">
+                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"></path>
+                  <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                </svg>
+                Recording
+              </div>
+              <audio controls preload="none" src="${audioSrc}"></audio>
+            </div>
+          ` : c.status === 'completed' && !c.noRec ? `
+            <div class="call-meta" style="font-style: italic; color: var(--accent-amber);">Processing call recording audio...</div>
+          ` : c.noRec ? `
+            <div class="call-meta" style="color: var(--text-muted);">No recording available for this call.</div>
+          ` : ''}
+
+          ${(c.transcriptSummary || transcriptItems) ? `
+            <details class="transcript-details">
+              <summary>
+                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                  <polyline points="14 2 14 8 20 8"></polyline>
+                  <line x1="16" y1="13" x2="8" y2="13"></line>
+                  <line x1="16" y1="17" x2="8" y2="17"></line>
+                  <polyline points="10 9 9 9 8 9"></polyline>
+                </svg>
+                View Call Transcript & Summary
+              </summary>
+              <div class="transcript-content">
+                ${c.transcriptSummary ? `<div class="summary-box"><strong>Summary:</strong> ${escapeHtml(c.transcriptSummary)}</div>` : ''}
+                ${transcriptItems ? `<div class="transcript-dialogue">${transcriptItems}</div>` : ''}
+              </div>
+            </details>
+          ` : ''}
+        </div>
+      `;
+    }).join('');
+  } catch (err) {
+    console.error('Error fetching call logs:', err);
+  }
+}
+
+function escapeHtml(str) {
+  return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+// Initial load & device initialization
+initDevice();
+loadCalls();
+
+// Auto refresh call logs every 5s if audio is not currently playing
+setInterval(() => {
+  const isPlaying = [...document.querySelectorAll('audio')].some((a) => !a.paused);
+  if (!isPlaying) {
+    loadCalls();
+  }
+}, 5000);
+</script>
+</body>
+</html>

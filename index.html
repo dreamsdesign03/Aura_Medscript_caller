@@ -8,8 +8,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
-<!-- Local Twilio Voice JavaScript SDK -->
-<script src="/twilio.min.js"></script>
+<!-- Twilio Voice JavaScript SDK via CDN -->
+<script src="https://cdn.jsdelivr.net/npm/@twilio/voice-sdk@2.18.5/dist/twilio.min.js"></script>
 <style>
   :root {
     --bg-dark: #090d14;
@@ -894,11 +894,52 @@ fetch('/api/config')
   })
   .catch((err) => console.error('Failed to load config:', err));
 
+// Pre-flight microphone check so we surface the real cause early (avoids 31402)
+async function ensureMic() {
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    throw new Error('Microphone access is not supported by this browser. Use HTTPS or localhost.');
+  }
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    stream.getTracks().forEach((t) => t.stop());
+  } catch (err) {
+    const name = err && err.name;
+    let msg = 'Could not access your microphone.';
+    if (name === 'NotReadableError' || name === 'TrackStartError' || name === 'AbortError') {
+      msg = 'Microphone is busy or unavailable. Close other apps/tabs (Zoom, Teams, etc.) using it, then try again.';
+    } else if (name === 'NotFoundError' || name === 'DevicesNotFoundError') {
+      msg = 'No microphone found. Connect a microphone and try again.';
+    } else if (name === 'NotAllowedError' || name === 'PermissionDeniedError') {
+      msg = 'Microphone permission denied. Allow it in your browser (and Windows Privacy settings).';
+    } else if (name === 'OverconstrainedError') {
+      msg = 'Microphone does not meet the required constraints.';
+    }
+    throw new Error(msg);
+  }
+}
+
+// Turn Twilio media errors into actionable messages
+function twilioErrorMessage(err) {
+  if (err && err.code === 31402) {
+    return 'Microphone could not be opened (31402). Close other apps/tabs using the mic, check Windows mic privacy settings, then reload.';
+  }
+  if (err && err.code === 31201) {
+    return 'Microphone permission blocked (31201). Allow the mic in your browser settings.';
+  }
+  return (err && err.message) || 'Twilio Device Error';
+}
+
 // Initialize Twilio Device
 async function initDevice() {
   if (typeof window.Twilio === 'undefined' || typeof window.Twilio.Device === 'undefined') {
     showStatus('Twilio SDK failed to load', 'error');
     return;
+  }
+
+  // Destroy any stale Device so two instances don't fight over the microphone
+  if (device) {
+    try { device.destroy(); } catch (e) { /* ignore */ }
+    device = null;
   }
 
   showStatus('Initializing Twilio Voice Device...', 'info');
@@ -923,7 +964,7 @@ async function initDevice() {
 
     device.on('error', (err) => {
       console.error('Twilio Device Error:', err);
-      showStatus(err.message || 'Twilio Device Error', 'error');
+      showStatus(twilioErrorMessage(err), 'error');
     });
 
     device.on('tokenWillExpire', async () => {
@@ -1047,6 +1088,8 @@ $('call').onclick = async () => {
   showStatus('Connecting call to ' + formattedNum + '...', 'info');
 
   try {
+    await ensureMic();
+
     activeCall = await device.connect({ params: { To: formattedNum } });
 
     activeCall.on('ringing', () => {
@@ -1084,7 +1127,7 @@ $('call').onclick = async () => {
       console.error('Active Call Error:', err);
       setCallUIState('idle');
       stopCallTimer();
-      showStatus(err.message || 'Call error occurred.', 'error');
+      showStatus(twilioErrorMessage(err), 'error');
       activeCall = null;
       loadCalls();
     });

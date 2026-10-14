@@ -140,15 +140,18 @@ async function handler(req, res) {
   try {
     // Serve HTML Dashboard
     if (req.method === 'GET' && req.url === '/') {
+      // path.resolve handles both local (__dirname = project root) and Vercel (__dirname = api/)
+      const htmlPath = fs.existsSync(path.join(__dirname, 'index.html'))
+        ? path.join(__dirname, 'index.html')
+        : path.join(__dirname, '..', 'index.html');
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-      return res.end(fs.readFileSync(path.join(__dirname, 'index.html')));
+      return res.end(fs.readFileSync(htmlPath));
     }
 
-    // Serve local Twilio Voice SDK bundle
+    // SDK now loaded via CDN in index.html — redirect if somehow hit directly
     if (req.method === 'GET' && (req.url === '/twilio.min.js' || req.url === '/twilio-voice.min.js')) {
-      const sdkPath = path.join(__dirname, 'node_modules', '@twilio', 'voice-sdk', 'dist', 'twilio.min.js');
-      res.writeHead(200, { 'Content-Type': 'application/javascript; charset=utf-8' });
-      return res.end(fs.readFileSync(sdkPath));
+      res.writeHead(302, { Location: 'https://cdn.jsdelivr.net/npm/@twilio/voice-sdk@2.18.5/dist/twilio.min.js' });
+      return res.end();
     }
 
     // Config endpoint

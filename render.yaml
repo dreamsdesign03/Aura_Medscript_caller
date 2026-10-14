@@ -1,0 +1,27 @@
+services:
+  - type: web
+    name: aura-medscribe-caller
+    runtime: node
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: TWILIO_ACCOUNT_SID
+        sync: false
+      - key: TWILIO_AUTH_TOKEN
+        sync: false
+      - key: TWILIO_NUMBER
+        sync: false
+      - key: TWIML_APP_SID
+        sync: false
+      - key: TWILIO_API_KEY
+        sync: false
+      - key: TWILIO_API_SECRET
+        sync: false
+      - key: ELEVENLABS_API_KEY
+        sync: false
+      - key: ELEVENLABS_AGENT_ID
+        sync: false
+      - key: ELEVENLABS_PHONE_NUMBER_ID
+        sync: false
+      - key: PORT
+        value: "3000"

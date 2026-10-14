@@ -22,7 +22,7 @@ const {
   ELEVENLABS_API_KEY,
   ELEVENLABS_AGENT_ID,
   ELEVENLABS_PHONE_NUMBER_ID,
-  PORT = 3000
+  PORT = process.env.PORT || 3000
 } = process.env;
 
 const AUTH = 'Basic ' + Buffer.from(`${SID}:${TOKEN}`).toString('base64');
@@ -340,4 +340,4 @@ http.createServer(async (req, res) => {
     console.error('Server error:', e);
     json(res, 500, { error: e.message });
   }
-}).listen(PORT, () => console.log(`Twilio & ElevenLabs AI Calling app running: http://localhost:${PORT}`));
+}).listen(PORT, '0.0.0.0', () => console.log(`Twilio & ElevenLabs AI Calling app running on port ${PORT}`));

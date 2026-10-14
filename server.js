@@ -27,7 +27,8 @@ const {
 
 const AUTH = 'Basic ' + Buffer.from(`${SID}:${TOKEN}`).toString('base64');
 const API = `https://api.twilio.com/2010-04-01/Accounts/${SID}`;
-const DB = path.join(__dirname, 'calls.json');
+// Vercel has a read-only filesystem except /tmp
+const DB = process.env.VERCEL ? '/tmp/calls.json' : path.join(__dirname, 'calls.json');
 const FINAL = ['completed', 'failed', 'busy', 'no-answer', 'canceled', 'done'];
 
 const load = () => { try { return JSON.parse(fs.readFileSync(DB, 'utf8')); } catch { return []; } };
@@ -134,7 +135,8 @@ async function refresh(c) {
   return c;
 }
 
-http.createServer(async (req, res) => {
+// Main request handler — exported for Vercel, used by http.createServer locally
+async function handler(req, res) {
   try {
     // Serve HTML Dashboard
     if (req.method === 'GET' && req.url === '/') {
@@ -340,4 +342,14 @@ http.createServer(async (req, res) => {
     console.error('Server error:', e);
     json(res, 500, { error: e.message });
   }
-}).listen(PORT, '0.0.0.0', () => console.log(`Twilio & ElevenLabs AI Calling app running on port ${PORT}`));
+}
+
+// Local dev: start HTTP server
+if (require.main === module) {
+  http.createServer(handler).listen(PORT, '0.0.0.0', () =>
+    console.log(`Twilio & ElevenLabs AI Calling app running on port ${PORT}`)
+  );
+}
+
+// Vercel serverless export
+module.exports = handler;
